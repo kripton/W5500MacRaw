@@ -31,7 +31,12 @@
  */
 
 #include "w5500.h"
-#include <SPI.h>
+
+#if defined(PICO_BUILD) && !defined(ARDUINO)
+    #include <string.h>
+#else
+    #include <SPI.h>
+#endif
 
 
 
@@ -255,13 +260,23 @@ boolean Wiznet5500::begin(const uint8_t *mac_address)
 {
     memcpy(_mac_address, mac_address, 6);
 
+#if defined(PICO_BUILD) && !defined(ARDUINO)
+    gpio_init(_cs);
+    gpio_set_dir(_cs, GPIO_OUT);
+#else
     pinMode(_cs, OUTPUT);
+#endif
+
     wizchip_cs_deselect();
 
+#if defined(PICO_BUILD) && !defined(ARDUINO)
+    // Nothing to do, we assume the SPI is already initialized correctly
+#else
     SPI.begin();
     SPI.setClockDivider(SPI_CLOCK_DIV4); // 4 MHz?
     SPI.setBitOrder(MSBFIRST);
     SPI.setDataMode(SPI_MODE0);
+#endif
 
     wizchip_sw_reset();
 

@@ -34,9 +34,31 @@
 #define W5500_H
 
 #include <stdint.h>
-#include <Arduino.h>
-#include <SPI.h>
 
+#if defined(PICO_BUILD) && !defined(ARDUINO)
+    #include <hardware/gpio.h>
+    #include <hardware/spi.h>
+
+    #ifndef boolean
+        #define boolean bool
+    #endif
+
+    #ifndef W5500_SPI
+        #define W5500_SPI spi1
+    #endif
+
+    #ifndef HIGH
+        #define HIGH 1
+    #endif
+
+    #ifndef LOW
+        #define LOW 0
+    #endif
+
+#else
+    #include <Arduino.h>
+    #include <SPI.h>
+#endif
 
 
 class Wiznet5500 {
@@ -46,7 +68,11 @@ public:
      * Constructor that uses the default hardware SPI pins
      * @param cs the Arduino Chip Select / Slave Select pin (default 10)
      */
+#if defined(PICO_BUILD) && !defined(ARDUINO)
+    Wiznet5500(int8_t cs);
+#else
     Wiznet5500(int8_t cs=SS);
+#endif
 
 
     /**
@@ -113,7 +139,11 @@ private:
      */
     inline void wizchip_cs_select()
     {
+#if defined(PICO_BUILD) && !defined(ARDUINO)
+        gpio_put(_cs, LOW);
+#else
         digitalWrite(_cs, LOW);
+#endif
     }
 
     /**
@@ -123,7 +153,11 @@ private:
      */
     inline void wizchip_cs_deselect()
     {
+#if defined(PICO_BUILD) && !defined(ARDUINO)
+        gpio_put(_cs, HIGH);
+#else
         digitalWrite(_cs, HIGH);
+#endif
     }
 
     /**
@@ -133,7 +167,13 @@ private:
      */
     inline uint8_t wizchip_spi_read_byte()
     {
+#if defined(PICO_BUILD) && !defined(ARDUINO)
+        uint8_t dst;
+        spi_read_blocking(W5500_SPI, 0x00, &dst, 1);
+        return dst;
+#else
         return SPI.transfer(0);
+#endif
     }
 
     /**
@@ -143,7 +183,11 @@ private:
      */
     inline void wizchip_spi_write_byte(uint8_t wb)
     {
+#if defined(PICO_BUILD) && !defined(ARDUINO)
+        spi_write_blocking(W5500_SPI, &wb, 1);
+#else
         SPI.transfer(wb);
+#endif
     }
 
 
