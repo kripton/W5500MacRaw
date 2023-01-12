@@ -188,12 +188,19 @@ void Wiznet5500::wizchip_recv_ignore(uint16_t len)
     setSn_RX_RD(ptr);
 }
 
-void Wiznet5500::wizchip_sw_reset()
+bool Wiznet5500::wizchip_sw_reset()
 {
+    uint8_t ver = 0;
     setMR(MR_RST);
-    getMR(); // for delay
+    ver = getVERSIONR(); // for delay
 
     setSHAR(_mac_address);
+
+    if (ver == 0x04) {
+        return true;
+    } else {
+        return false;
+    }
 }
 
 int8_t Wiznet5500::wizphy_getphylink()
@@ -253,10 +260,14 @@ int8_t Wiznet5500::wizphy_setphypmode(uint8_t pmode)
 
 Wiznet5500::Wiznet5500(int8_t cs)
 {
+    present = false;
+    phyLink = false;
+    phyLink100 = false;
+    phyLinkFD = false;
     _cs = cs;
 }
 
-boolean Wiznet5500::begin(const uint8_t *mac_address)
+uint8_t Wiznet5500::begin(const uint8_t *mac_address)
 {
     memcpy(_mac_address, mac_address, 6);
 
@@ -278,7 +289,11 @@ boolean Wiznet5500::begin(const uint8_t *mac_address)
     SPI.setDataMode(SPI_MODE0);
 #endif
 
-    wizchip_sw_reset();
+    present = wizchip_sw_reset();
+
+    if (!present) {
+        return 0;
+    }
 
     // Use the full 16Kb of RAM for Socket 0
     setSn_RXBUF_SIZE(16);
@@ -289,14 +304,24 @@ boolean Wiznet5500::begin(const uint8_t *mac_address)
 
     // Open Socket 0 in MACRaw mode
     setSn_MR(Sn_MR_MACRAW);
+
+    // Calling the "OPEN" command only works with cable attached (at least
+    // it behaves like that, I didn't see anything in the docs)
+    // Thus, only call open if we have a link
+
+    readStatus();
+
+    if (!phyLink) {
+        return 1;
+    }
+
     setSn_CR(Sn_CR_OPEN);
     if (getSn_SR() != SOCK_MACRAW) {
         // Failed to put socket 0 into MACRaw mode
-        return false;
+        return 1;
     }
-
     // Success
-    return true;
+    return 2;
 }
 
 void Wiznet5500::end()

@@ -76,13 +76,24 @@ public:
 
 
     /**
-     * Initialise the Ethernet controller
+     * Initialise and configure the Ethernet controller
      * Must be called before sending or receiving Ethernet frames
      *
      * @param address the local MAC address for the Ethernet interface
-     * @return Returns true if setting up the Ethernet interface was successful
+     * @return 0 = chip not present, 1 = chip present but no link, 2 = chip present and linked
      */
-    boolean begin(const uint8_t *address);
+    uint8_t begin(const uint8_t *address);
+
+    /*
+     * Read the status register and update public phy status variables
+     */
+    void readStatus() {
+        uint8_t phycfg = getPHYCFGR();
+
+        phyLink = phycfg & PHYCFGR_LNK_ON;
+        phyLink100 = phycfg & PHYCFGR_SPD_100;
+        phyLinkFD = phycfg & PHYCFGR_DPX_FULL;
+    }
 
     /**
      * Shut down the Ethernet controlled
@@ -106,6 +117,11 @@ public:
      */
     uint16_t readFrame(uint8_t *buffer, uint16_t bufsize);
 
+    bool present;
+    bool phyLink;
+    bool phyLink100;
+    bool phyLinkFD;
+
 
 private:
 
@@ -126,8 +142,6 @@ private:
 
     //< Socket 0 Rx buffer address block
     static const uint8_t BlockSelectRxBuf = (0x03 << 3);
-
-
 
     int8_t _cs;
     uint8_t _mac_address[6];
@@ -253,7 +267,7 @@ private:
     /**
      * Reset WIZCHIP by softly.
      */
-    void wizchip_sw_reset();
+    bool wizchip_sw_reset();
 
     /**
      * Get the link status of phy in WIZCHIP
