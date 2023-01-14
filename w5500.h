@@ -555,6 +555,24 @@ private:
     }
 
     /**
+     * Set @ref SIMR register
+     * @param (uint8_t)simr Value to set @ref SIMR register.
+     * @sa getSIMR()
+     */
+    inline void setSIMR(uint8_t simr) {
+        wizchip_write(BlockSelectCReg, SIMR, simr);
+    }
+
+    /**
+     * Get @ref SIMR register
+     * @return uint8_t. Value of @ref SIMR register.
+     * @sa setSIMR()
+     */
+    inline uint8_t getSIMR() {
+        return wizchip_read(BlockSelectCReg, SIMR);
+    }
+
+    /**
      * Set @ref PHYCFGR register
      * @param (uint8_t)phycfgr Value to set @ref PHYCFGR register.
      * @sa getPHYCFGR()
@@ -614,6 +632,7 @@ private:
         return wizchip_read(BlockSelectSReg, Sn_CR);
     }
 
+public:
     /**
      * Set @ref Sn_IR register
      * @param (uint8_t)ir Value to set @ref Sn_IR
@@ -632,6 +651,7 @@ private:
         return (wizchip_read(BlockSelectSReg, Sn_IR) & 0x1F);
     }
 
+private:
     /**
      * Set @ref Sn_IMR register
      * @param (uint8_t)imr Value to set @ref Sn_IMR

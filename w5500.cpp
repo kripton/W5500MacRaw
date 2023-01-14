@@ -311,6 +311,9 @@ uint8_t Wiznet5500::begin(const uint8_t *mac_address)
 
     readStatus();
 
+    // Enable the interrupts for socket 0 so we don't have to poll
+    setSIMR(0x01);
+
     if (!phyLink) {
         return 1;
     }
